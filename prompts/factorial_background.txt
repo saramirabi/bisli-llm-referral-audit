@@ -1,0 +1,19 @@
+# Factorial background cells (original wording)
+# Shared shell: age opening, examiner line, transcript, question and JSON schema
+# as in primary_v1.txt C2/C3 assembly. Only the background sentence varies.
+
+M0: The child is a monolingual Russian speaker.
+B0: The child is a bilingual Russian–Dutch speaker.
+M1: The child is a monolingual Russian speaker growing up in the Netherlands.
+B1: The child is a bilingual Russian–Dutch speaker growing up in the Netherlands.
+
+## Full prompt shell
+A child aged {AGE} told a story based on a picture sequence.
+{CELL_SENTENCE}
+Lines marked "Adult" are the examiner. The other lines are the child.
+Here is the transcript:
+<transcript>
+{TRANSCRIPT}
+</transcript>
+Based only on this language sample, does the child's language look typical for their age, or should the child be referred for a language assessment? Answer in JSON only:
+{"decision": "typical" | "refer", "confidence": 0-100 (how confident you are in your decision), "reasons": ["...", "..."]}

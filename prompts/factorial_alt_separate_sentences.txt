@@ -1,0 +1,12 @@
+# Factorial background cells (alternative wording)
+# Same shared shell as factorial_background.txt.
+# Rewording changes only the four cell sentences: bilinguality and Netherlands
+# upbringing are separate sentences in M1 and B1.
+
+M0: The child speaks Russian and is monolingual.
+B0: The child speaks Russian and Dutch and is bilingual.
+M1: The child speaks Russian and is monolingual. The child is growing up in the Netherlands.
+B1: The child speaks Russian and Dutch and is bilingual. The child is growing up in the Netherlands.
+
+Netherlands sentence (identical in M1 and B1; absent from M0 and B0):
+The child is growing up in the Netherlands.

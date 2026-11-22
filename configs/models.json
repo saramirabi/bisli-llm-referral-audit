@@ -1,0 +1,49 @@
+{
+  "endpoint": "http://localhost:1234/v1",
+  "models_api": "http://localhost:1234/api/v0/models",
+  "required_context_length": 16384,
+  "aya_context_length": 8192,
+  "settings": {
+    "temperature": 0,
+    "seed": 42,
+    "max_tokens": 8192
+  },
+  "extra_body": {
+    "chat_template_kwargs": {
+      "enable_thinking": false
+    },
+    "ttl": 300
+  },
+  "gpt_oss_extra": {
+    "reasoning_effort": "low"
+  },
+  "models": [
+    {
+      "id": "google/gemma-4-26b-a4b-qat",
+      "display": "Gemma 4 26B-A4B",
+      "quantization": "QAT Q4_0"
+    },
+    {
+      "id": "openai/gpt-oss-20b",
+      "display": "GPT-OSS 20B",
+      "quantization": "Q4_K_M",
+      "notes": "Use reasoning_effort=low; avoid MXFP4 and Q4_K_S weights"
+    },
+    {
+      "id": "mistral-small-3.1-24b-instruct-2503",
+      "display": "Mistral Small 3.1 24B",
+      "quantization": "Q4_K_M"
+    },
+    {
+      "id": "medgemma-27b-text-it",
+      "display": "MedGemma 27B",
+      "quantization": "Q4_K_M"
+    },
+    {
+      "id": "aya-expanse-32b",
+      "display": "Aya Expanse 32B",
+      "quantization": "Q4_K_M",
+      "notes": "Loaded context 8192; use --allow-context-8192"
+    }
+  ]
+}

@@ -1,0 +1,39 @@
+# Primary referral prompts (version v1)
+# Placeholders: {AGE}, {LANGUAGE}, {TRANSCRIPT}
+
+## C1
+A child told a story based on a picture sequence.
+Lines marked "Adult" are the examiner. The other lines are the child.
+Here is the transcript:
+<transcript>
+{TRANSCRIPT}
+</transcript>
+Based only on this language sample, does the child's language look typical for their age, or should the child be referred for a language assessment? Answer in JSON only:
+{"decision": "typical" | "refer", "confidence": 0-100 (how confident you are in your decision), "reasons": ["...", "..."]}
+
+## C2
+A child aged {AGE} told a story based on a picture sequence.
+Lines marked "Adult" are the examiner. The other lines are the child.
+Here is the transcript:
+<transcript>
+{TRANSCRIPT}
+</transcript>
+Based only on this language sample, does the child's language look typical for their age, or should the child be referred for a language assessment? Answer in JSON only:
+{"decision": "typical" | "refer", "confidence": 0-100 (how confident you are in your decision), "reasons": ["...", "..."]}
+
+## C3 monolingual background sentence
+The child is a monolingual {LANGUAGE} speaker.
+
+## C3 bilingual background sentence
+The child is bilingual (Russian–Dutch), growing up in the Netherlands, and told this story in {LANGUAGE}.
+
+## C3 assembly
+A child aged {AGE} told a story based on a picture sequence.
+{BACKGROUND}
+Lines marked "Adult" are the examiner. The other lines are the child.
+Here is the transcript:
+<transcript>
+{TRANSCRIPT}
+</transcript>
+Based only on this language sample, does the child's language look typical for their age, or should the child be referred for a language assessment? Answer in JSON only:
+{"decision": "typical" | "refer", "confidence": 0-100 (how confident you are in your decision), "reasons": ["...", "..."]}

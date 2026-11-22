@@ -1,0 +1,18 @@
+# Prompt-robustness template T1 (semantically equivalent presentation A)
+# Keeps: clinical question content, JSON schema, transcript, age, background content
+# Changes: surrounding instruction wording
+
+## C2
+This transcript is from a child aged {AGE} who narrated a picture-sequence story.
+Lines labelled "Adult" are the examiner; the remaining lines are the child.
+Transcript:
+<transcript>
+{TRANSCRIPT}
+</transcript>
+Using only this language sample, is the child's language typical for their age, or should the child be referred for a language assessment? Answer in JSON only:
+{"decision": "typical" | "refer", "confidence": 0-100 (how confident you are in your decision), "reasons": ["...", "..."]}
+
+## C3
+Insert the same background content as primary_v1 after the opening sentence:
+  bilingual: The child is bilingual (Russian–Dutch), growing up in the Netherlands, and told this story in {LANGUAGE}.
+  monolingual: The child is a monolingual {LANGUAGE} speaker.

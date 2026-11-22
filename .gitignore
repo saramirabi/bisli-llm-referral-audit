@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.env
+.env.*
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.DS_Store
+Thumbs.db
+
+# Local data and model outputs (TalkBank / BiSLI text must never be committed)
+data/
+outputs/
+results/
+*.jsonl
+*.gguf
+*.bin
+*.safetensors
+
+# Editor / OS
+.idea/
+.vscode/
+*.swp

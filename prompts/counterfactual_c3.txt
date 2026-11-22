@@ -1,0 +1,20 @@
+# Counterfactual C3 label-swap (monolingual Russian narratives)
+# Same shell as primary_v1 C3. Only the background sentence changes.
+# True diagnosis and true group never appear in the prompt.
+
+## C3_MONO (accurate monolingual background)
+The child is a monolingual {LANGUAGE} speaker.
+
+## C3_BI_CF (bilingual background on the same transcript)
+The child is bilingual (Russian–Dutch), growing up in the Netherlands, and told this story in {LANGUAGE}.
+
+## Assembly
+A child aged {AGE} told a story based on a picture sequence.
+{BACKGROUND}
+Lines marked "Adult" are the examiner. The other lines are the child.
+Here is the transcript:
+<transcript>
+{TRANSCRIPT}
+</transcript>
+Based only on this language sample, does the child's language look typical for their age, or should the child be referred for a language assessment? Answer in JSON only:
+{"decision": "typical" | "refer", "confidence": 0-100 (how confident you are in your decision), "reasons": ["...", "..."]}

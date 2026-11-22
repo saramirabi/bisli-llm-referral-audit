@@ -1,0 +1,12 @@
+{
+  "seed": 42,
+  "bootstrap_resamples": 10000,
+  "clustering_unit": "child_id",
+  "clarification_note": "Referral contrasts use child-clustered percentile bootstrap CIs on the mean narrative-level difference (refer=1, typical=0).",
+  "factorial_cells": ["M0", "B0", "M1", "B1"],
+  "factorial_estimands": {
+    "simple_B_N0": "B0 - M0",
+    "simple_B_N1": "B1 - M1",
+    "interaction": "(B1 - M1) - (B0 - M0)"
+  }
+}
