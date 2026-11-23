@@ -5,19 +5,21 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bisli-llm-referral-audit"
 version = "1.0.0"
-description = "Audit language-background effects in local LLM referral decisions on BiSLI narratives"
+description = "Code and frozen prompts for auditing language-background effects in local LLM referral decisions on BiSLI narratives"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Anonymous" }]
 dependencies = [
   "numpy>=1.24",
   "pandas>=2.0",
 ]
 
 [project.scripts]
-bisli-primary = "bisli_audit.run_primary:main"
+bisli-clean = "bisli_audit.clean:main"
+bisli-disclosure = "bisli_audit.run_primary:main"
 bisli-followup = "bisli_audit.followups.run_followup:main"
+bisli-probes = "bisli_audit.label_only.run_probes:main"
+bisli-cf = "bisli_audit.counterfactual.run_cf:main"
 bisli-factorial-alt = "bisli_audit.factorial_wording.run_alt_factorial:main"
 bisli-factorial-analyze = "bisli_audit.factorial_wording.analyze_interaction:main"
 bisli-contrasts = "bisli_audit.analysis.contrasts:main"

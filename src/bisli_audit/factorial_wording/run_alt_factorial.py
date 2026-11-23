@@ -1,13 +1,4 @@
-"""Run the four factorial cells with alternative separate-sentence wording.
-
-Example (MedGemma SLI cohort):
-  python -m bisli_audit.factorial_wording.run_alt_factorial \\
-    --model medgemma-27b-text-it \\
-    --cohort path/to/sli244.csv \\
-    --order path/to/order.csv \\
-    --transcripts path/to/transcripts \\
-    --out path/to/out.jsonl
-"""
+"""Factorial cells with alternative separate-sentence wording (paper: MedGemma SLI 244)."""
 
 from __future__ import annotations
 
@@ -21,8 +12,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from bisli_audit.client import EXTRA, SETTINGS, chat, load_info
-from bisli_audit.prompts import FACTORIAL_ALT, parse_response, render_factorial
+from bisli_audit.client import EXTRA, SETTINGS, chat, load_info, parse_with_status
+from bisli_audit.prompts import FACTORIAL_ALT, render_factorial
 
 REQUIRED_CONTEXT = 16384
 MAX_ATTEMPTS = 2
@@ -64,7 +55,7 @@ def main() -> None:
             for attempt in range(1, MAX_ATTEMPTS + 1):
                 t0 = time.time()
                 text, raw, _ = chat(args.model, prompt)
-                parsed = parse_response(text)
+                status = parse_with_status(text)
                 rec = {
                     "experiment": "factorial_alt_separate_sentences",
                     "item_id": item_id,
@@ -75,9 +66,9 @@ def main() -> None:
                     "factorial_cell": cell,
                     "order_position": pos,
                     "attempt": attempt,
-                    "decision": None if parsed is None else parsed["decision"],
-                    "confidence": None if parsed is None else parsed["confidence"],
-                    "parse_status": "ok" if parsed else "invalid",
+                    "decision": status["decision"],
+                    "confidence": status["confidence"],
+                    "parse_status": status["parse_status"],
                     "prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest(),
                     "raw_text": text,
                     "latency_s": round(time.time() - t0, 3),
@@ -89,7 +80,7 @@ def main() -> None:
                 }
                 fh.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 fh.flush()
-                if parsed:
+                if status["parse_status"] == "ok":
                     break
 
 

@@ -9,17 +9,19 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from bisli_audit.analysis.cluster_bootstrap import cluster_boot_ci
+
 CELLS = ["M0", "B0", "M1", "B1"]
 B = 10_000
 SEED = 42
 
 
-def is_refer(x) -> int:
+def is_refer(x) -> float:
     s = str(x).lower()
     if s == "refer":
-        return 1
+        return 1.0
     if s in {"typical", "no_refer"}:
-        return 0
+        return 0.0
     return np.nan
 
 
@@ -57,21 +59,15 @@ def wide_table(df: pd.DataFrame) -> pd.DataFrame:
     return wide
 
 
-def child_boot(wide: pd.DataFrame, col: str) -> dict:
-    children = wide["child_id"].dropna().unique()
-    rng = np.random.default_rng(SEED)
-    point = float(wide[col].mean())
-    boots = []
-    for _ in range(B):
-        draw = rng.choice(children, size=len(children), replace=True)
-        parts = [wide[wide.child_id == c] for c in draw]
-        boots.append(float(pd.concat(parts)[col].mean()))
-    arr = np.asarray(boots, dtype=float)
+def summarize(wide: pd.DataFrame, col: str) -> dict:
+    est, lo, hi = cluster_boot_ci(
+        wide, wide[col], cluster_col="child_id", n_boot=B, seed=SEED
+    )
     return {
-        "estimate_pp": point * 100,
-        "ci_low_pp": float(np.percentile(arr, 2.5)) * 100,
-        "ci_high_pp": float(np.percentile(arr, 97.5)) * 100,
-        "n_children": int(len(children)),
+        "estimate_pp": est * 100,
+        "ci_low_pp": lo * 100,
+        "ci_high_pp": hi * 100,
+        "n_children": int(wide["child_id"].nunique()),
         "n_narratives": int(len(wide)),
     }
 
@@ -81,16 +77,15 @@ def main() -> None:
     ap.add_argument("--jsonl", type=Path, required=True)
     args = ap.parse_args()
     wide = wide_table(load_jsonl(args.jsonl))
-    rates = {c: float(wide[c].mean()) for c in CELLS}
-    counts = {c: int(wide[c].sum()) for c in CELLS}
     out = {
         "n_narratives": int(len(wide)),
         "n_children": int(wide.child_id.nunique()),
-        "rates": rates,
-        "refer_counts": counts,
-        "simple_B_N0": child_boot(wide, "simple_B_N0"),
-        "simple_B_N1": child_boot(wide, "simple_B_N1"),
-        "interaction": child_boot(wide, "interaction"),
+        "rates": {c: float(wide[c].mean()) for c in CELLS},
+        "refer_counts": {c: int(wide[c].sum()) for c in CELLS},
+        "simple_B_N0": summarize(wide, "simple_B_N0"),
+        "simple_B_N1": summarize(wide, "simple_B_N1"),
+        "interaction": summarize(wide, "interaction"),
+        "bootstrap": {"B": B, "seed": SEED},
     }
     print(json.dumps(out, indent=2))
 

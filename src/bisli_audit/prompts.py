@@ -1,10 +1,9 @@
-"""Referral prompt builders and response parser."""
+"""Frozen referral prompt builders and response parser (version v1)."""
 
 from __future__ import annotations
 
 import json
 import math
-import re
 
 PROMPT_VERSION = "v1"
 CONDITIONS = ("C1", "C2", "C3")
@@ -119,6 +118,62 @@ def render_factorial(cell: str, transcript: str, age_months: float, alt: bool = 
             QUESTION,
         ]
     )
+
+
+def render_wording(
+    template: str,
+    transcript: str,
+    *,
+    age_months: float,
+    condition: str,
+    group: str | None = None,
+    language: str | None = None,
+) -> str:
+    """T0 = primary; T1/T2 = semantically equivalent presentations."""
+    if template == "T0_original":
+        return render_prompt(
+            condition,
+            transcript,
+            age_months=age_months,
+            group=group,
+            language=language,
+        )
+    age = format_age(age_months)
+    bg = _background(group, language) if condition == "C3" else ""
+    if template == "T1_equivalent_a":
+        lines = [
+            f"This transcript is from a child aged {age} who narrated a picture-sequence story."
+        ]
+        if bg:
+            lines.append(bg)
+        lines += [
+            'Lines labelled "Adult" are the examiner; the remaining lines are the child.',
+            "Transcript:",
+            "<transcript>",
+            transcript.strip(),
+            "</transcript>",
+            (
+                "Using only this language sample, is the child's language typical for their age, "
+                "or should the child be referred for a language assessment? Answer in JSON only:\n"
+                '{"decision": "typical" | "refer", "confidence": 0-100 '
+                '(how confident you are in your decision), "reasons": ["...", "..."]}'
+            ),
+        ]
+        return "\n".join(lines)
+    if template == "T2_equivalent_b":
+        lines = [f"Child age: {age}."]
+        if bg:
+            lines.append(f"Background: {bg}")
+        lines += [
+            "Task: picture-sequence story retell.",
+            'Speaker key: "Adult" = examiner; all other lines = child.',
+            "<transcript>",
+            transcript.strip(),
+            "</transcript>",
+            QUESTION,
+        ]
+        return "\n".join(lines)
+    raise ValueError(template)
 
 
 def parse_response(text: str) -> dict | None:

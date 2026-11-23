@@ -1,94 +1,109 @@
 # Bilingual, Not Delayed? Auditing Language-Background Effects in LLM Referral Decisions
 
-Code and frozen prompts for the ACSW 2027 paper that audits how local open-weight language models change referral recommendations when only the sentence describing a child changes.
+Replication code and frozen prompts for the ACSW 2027 paper. The study holds real BiSLI narratives fixed, varies only the sentence that describes the child, and records whether locally run open-weight LLMs recommend referral for language assessment.
 
-Narratives come from the [BiSLI](https://talkbank.org/) corpus (Russian–Dutch bilingual and monolingual Fox/Cat story retells). This repository does **not** redistribute transcript text, free-text model explanations, or TalkBank archives. Obtain BiSLI through TalkBank/CHILDES, cite the corpus papers, and keep processed speech under a local `data/` directory that is gitignored here.
+This repository does **not** redistribute transcript text, free-text model explanations, or TalkBank archives. Obtain BiSLI through [TalkBank/CHILDES](https://talkbank.org/), cite the corpus papers, and keep speech data under a local `data/` directory (gitignored).
 
-All inference is intended for a **local** [LM Studio](https://lmstudio.ai/) OpenAI-compatible endpoint (`http://localhost:1234/v1`). No cloud API keys are required or used by this package.
-
----
-
-## What this release contains
-
-| Path | Role |
-| --- | --- |
-| `prompts/` | Frozen prompt text for primary conditions, counterfactual C3, factorial cells, and wording variants |
-| `src/bisli_audit/` | Prompt builders, LM Studio client, experiment runners, and child-clustered contrast analysis |
-| `configs/models.json` | Model IDs, context lengths, temperature/seed/`max_tokens` |
-| `configs/analysis.json` | Bootstrap settings and factorial estimands |
-
-Transcripts, cohort tables, and JSONL run logs are **not** included.
+All inference targets a **local** [LM Studio](https://lmstudio.ai/) endpoint at `http://localhost:1234/v1`. No commercial API keys are used.
 
 ---
 
-## Experimental design (as implemented)
+## Paper experiments (Table 1)
 
-Prompts ask for a JSON object:
+| Experiment | RQ | Data | Conditions | Module |
+| --- | --- | --- | --- | --- |
+| Accurate disclosure | 1, 2 | 1,044 transcripts (RU+NL) | C2, C3 | `run_primary` |
+| Factorial 2×2 | 3 | 516 RU monolingual | M0, B0, M1, B1 | `followups` (`factorial_background`) |
+| Ablation probes | 3 | 516 RU monolingual | M0 vs full C3 / B0 | `label_only.run_probes` |
+| Wording robustness | 4 | 273 transcripts | C2, C3 × T0–T2 | `followups` (`prompt_robustness`) |
+| Factorial wording | 4 | 244 RU SLI (MedGemma) | M0–B1 reworded | `factorial_wording` |
+| Repetition / stability | 4 | 78 transcripts | C2, C3 × 3 runs | `followups` (`generation_stability`) |
 
-```json
+Counterfactual C3 label-swap helpers are also included (`counterfactual`).
+
+---
+
+## Repository layout
+
+```
+prompts/                  Frozen prompt text (canonical wording)
+configs/                  Model IDs, decoding settings, bootstrap defaults
+src/bisli_audit/
+  clean.py                CHAT → Adult:/Child: transcripts + id map
+  prompts.py              Prompt builders + JSON response parser
+  client.py               LM Studio client (localhost)
+  run_primary.py          Disclosure: C1/C2/C3
+  followups/              Wording, stability, factorial
+  label_only/             Single-cue ablation probes
+  counterfactual/         C3_MONO / C3_BI_CF
+  factorial_wording/      Alternative cell sentences + interaction analysis
+  analysis/               Child-clustered bootstrap contrasts
+```
+
+---
+
+## Frozen prompts
+
+Shared clinical question (JSON-only answer):
+
+```text
+Based only on this language sample, does the child's language look typical
+for their age, or should the child be referred for a language assessment?
+Answer in JSON only:
 {"decision": "typical" | "refer", "confidence": 0-100, "reasons": ["...", "..."]}
 ```
 
 ### Primary conditions (`prompts/primary_v1.txt`)
 
-- **C1** — transcript only (no age, no background).
-- **C2** — age + transcript.
-- **C3** — age + accurate language-background sentence + transcript.
+- **C1** — transcript only
+- **C2** — age + transcript
+- **C3** — age + accurate background + transcript
 
-Background sentences (C3):
+C3 background sentences:
 
 - Monolingual: `The child is a monolingual {LANGUAGE} speaker.`
 - Bilingual: `The child is bilingual (Russian–Dutch), growing up in the Netherlands, and told this story in {LANGUAGE}.`
 
-### Counterfactual C3 (`prompts/counterfactual_c3.txt`)
+### Factorial cells (`prompts/factorial_background.txt`)
 
-On monolingual Russian narratives, the same age and transcript are paired with:
-
-- **C3_MONO** — accurate monolingual background.
-- **C3_BI_CF** — bilingual background (label swap).
-
-True diagnosis never appears in the prompt.
-
-### Factorial 2×2 background cells (`prompts/factorial_background.txt`)
-
-Within-transcript cells on monolingual Russian narratives (age fixed):
-
-| Cell | Background sentence |
+| Cell | Sentence |
 | --- | --- |
-| **M0** | The child is a monolingual Russian speaker. |
-| **B0** | The child is a bilingual Russian–Dutch speaker. |
-| **M1** | The child is a monolingual Russian speaker growing up in the Netherlands. |
-| **B1** | The child is a bilingual Russian–Dutch speaker growing up in the Netherlands. |
+| M0 | The child is a monolingual Russian speaker. |
+| B0 | The child is a bilingual Russian–Dutch speaker. |
+| M1 | The child is a monolingual Russian speaker growing up in the Netherlands. |
+| B1 | The child is a bilingual Russian–Dutch speaker growing up in the Netherlands. |
 
-Estimands (refer = 1, typical = 0):
-
-- Simple bilingual effect without upbringing: `B0 − M0`
-- Simple bilingual effect with upbringing: `B1 − M1`
-- Interaction: `(B1 − M1) − (B0 − M0)`
+Estimands (refer=1, typical=0): `B0−M0`, `B1−M1`, interaction `(B1−M1)−(B0−M0)`.
 
 ### Alternative factorial wording (`prompts/factorial_alt_separate_sentences.txt`)
 
-Same shared shell; only the four cell sentences change. In **M1** and **B1**, bilinguality and Netherlands upbringing are separate sentences.
+Same shell; only the four cell sentences change. In M1/B1, bilinguality and Netherlands upbringing are separate sentences.
 
-### Prompt-robustness templates (`prompts/wording_t1.txt`, `wording_t2.txt`)
+### Wording templates (`prompts/wording_t1.txt`, `wording_t2.txt`)
 
-Semantically equivalent C2/C3 presentations with different surrounding instruction wording. Used for wording-sensitivity checks alongside generation-stability repeats at temperature 0.
+Semantically equivalent C2/C3 presentations with different surrounding instructions.
+
+### Ablation / counterfactual
+
+See `prompts/label_only.txt` and `prompts/counterfactual_c3.txt`.
 
 ---
 
-## Models and decoding (paper configuration)
+## Models and decoding
 
-Configured in `configs/models.json`:
+From `configs/models.json` (paper configuration):
 
-| Model ID (LM Studio) | Notes |
+| LM Studio model ID | Context |
 | --- | --- |
-| `google/gemma-4-26b-a4b-qat` | Gemma 4 26B-A4B |
-| `openai/gpt-oss-20b` | Q4_K_M; send `reasoning_effort: "low"` |
-| `mistral-small-3.1-24b-instruct-2503` | Mistral Small 3.1 24B |
-| `medgemma-27b-text-it` | MedGemma 27B |
-| `aya-expanse-32b` | Context length **8192** (others **16384**) |
+| `google/gemma-4-26b-a4b-qat` | 16384 |
+| `openai/gpt-oss-20b` | 16384 (`reasoning_effort=low`) |
+| `mistral-small-3.1-24b-instruct-2503` | 16384 |
+| `medgemma-27b-text-it` | 16384 |
+| `aya-expanse-32b` | **8192** (use `--allow-context-8192`) |
 
-Shared settings: `temperature=0`, `seed=42`, `max_tokens=8192`, `chat_template_kwargs.enable_thinking=false`. Load one model at a time with the required context length before launching a runner.
+Shared settings: `temperature=0`, `seed=42`, `max_tokens=8192`, thinking disabled. Load one model at a time before running.
+
+Inference uses child-clustered percentile bootstrap with **B = 10,000** and **seed = 42** (`configs/analysis.json`).
 
 ---
 
@@ -101,47 +116,73 @@ python -m venv .venv
 pip install -e .
 ```
 
-Prepare locally (not in git):
+Prepare BiSLI locally (not committed):
 
-```
-data/
-  cohort.csv              # item_id, child_id, age_months, group, language, diagnosis, ...
-  transcripts/{item_id}.txt
-  order.csv               # factorial cell order per item (optional)
+```bash
+python -m bisli_audit.clean \
+  --zip path/to/BiSLI.zip \
+  --transcripts-out data/transcripts \
+  --id-map-out data/cohort.csv
 ```
 
-Strip CHAT headers and dependent tiers before prompting. Keep Adult/Child speaker labels. Do not leak group or diagnosis codes into the transcript body.
+Strip CHAT headers and dependent tiers; keep `Adult:` / `Child:` labels. Do not leave group or diagnosis codes in the transcript body.
+
+Expected cohort columns: `item_id`, `child_id`, `age_months`, `group`, `language`, `diagnosis`.
 
 ---
 
 ## Running experiments
 
-Load the target model in LM Studio first, then:
+Load the target model in LM Studio first.
 
-**Primary C1/C2/C3**
+**Disclosure (C2/C3)**
 
 ```bash
 python -m bisli_audit.run_primary \
   --model medgemma-27b-text-it \
   --cohort data/cohort.csv \
   --transcripts data/transcripts \
-  --out outputs/primary.jsonl
+  --out outputs/disclosure.jsonl
 ```
 
-For Aya at 8192 context, add `--allow-context-8192`.
-
-**Follow-ups** (prompt robustness, generation stability, factorial background)
+**Factorial background**
 
 ```bash
 python -m bisli_audit.followups.run_followup factorial_background \
   --model medgemma-27b-text-it \
-  --cohort data/cohort.csv \
+  --cohort data/ru_mono.csv \
   --transcripts data/transcripts \
-  --order data/order.csv \
+  --order data/factorial_order.csv \
   --out outputs/factorial.jsonl
 ```
 
-**Factorial alternative wording**
+**Ablation probes**
+
+```bash
+python -m bisli_audit.label_only.run_probes \
+  --model medgemma-27b-text-it \
+  --cohort data/ru_mono.csv \
+  --transcripts data/transcripts \
+  --out outputs/probes.jsonl
+```
+
+**Wording / repetition**
+
+```bash
+python -m bisli_audit.followups.run_followup prompt_robustness \
+  --model medgemma-27b-text-it \
+  --cohort data/wording_sample.csv \
+  --transcripts data/transcripts \
+  --out outputs/wording.jsonl
+
+python -m bisli_audit.followups.run_followup generation_stability \
+  --model openai/gpt-oss-20b \
+  --cohort data/stability_sample.csv \
+  --transcripts data/transcripts \
+  --out outputs/stability.jsonl
+```
+
+**Factorial alternative wording (MedGemma SLI)**
 
 ```bash
 python -m bisli_audit.factorial_wording.run_alt_factorial \
@@ -152,60 +193,51 @@ python -m bisli_audit.factorial_wording.run_alt_factorial \
   --out outputs/factorial_alt.jsonl
 ```
 
-**Dry run** (validate load check and job count only): append `--dry-run` to any runner.
+Append `--dry-run` to validate load checks and job counts without calling the model.
 
 ---
 
 ## Analysis
 
-Child-clustered percentile bootstrap (`B=10000`, `seed=42`) on narrative-level referral indicators:
-
 ```bash
-# Paired C2 → C3
-python -m bisli_audit.analysis.contrasts --jsonl outputs/primary.jsonl
+# Paired C2 → C3 (disclosure)
+python -m bisli_audit.analysis.contrasts --jsonl outputs/disclosure.jsonl
 
-# Factorial simple effects and interaction (complete M0/B0/M1/B1 quadruples)
+# Factorial simple effects and interaction
 python -m bisli_audit.factorial_wording.analyze_interaction --jsonl outputs/factorial.jsonl
 ```
 
-Inference clusters on `child_id` (or `person_id` when that is the only identifier).
-
 ---
 
-## Prompt API (Python)
+## Python API
 
 ```python
-from bisli_audit.prompts import render_prompt, render_factorial, parse_response
+from bisli_audit.prompts import render_prompt, render_factorial, render_wording, parse_response
 from bisli_audit.counterfactual.prompts_cf import build_cf_prompt
+from bisli_audit.label_only.prompts_lo import build_label_only_prompt
 
-prompt = render_prompt(
-    "C3",
-    transcript,
-    age_months=63,
-    group="bilingual",
-    language="Russian",
-)
-factorial = render_factorial("B1", transcript, age_months=63, alt=False)
-cf_prompt, meta = build_cf_prompt(transcript, age_months=63, label="C3_BI_CF")
+prompt = render_prompt("C3", transcript, age_months=63, group="bilingual", language="Russian")
+cell = render_factorial("B1", transcript, 63, alt=False)
+t1 = render_wording("T1_equivalent_a", transcript, age_months=63, condition="C2")
+cf, meta = build_cf_prompt(transcript, 63, "C3_BI_CF")
+lo, lo_meta = build_label_only_prompt(transcript, 63, "BI_LABEL")
 parsed = parse_response(model_text)
 ```
 
-Canonical strings live in `prompts/*.txt`; builders in `src/bisli_audit/prompts.py` must stay aligned with those files.
+Keep `prompts/*.txt` and `src/bisli_audit/prompts.py` aligned.
 
 ---
 
-## Data and ethics
+## Data governance
 
-- BiSLI is distributed via TalkBank/CHILDES. Follow TalkBank ground rules; cite the corpus.
-- Do not commit raw CHAT files, processed transcripts, or free-text model rationales.
-- This package supports secondary analysis of archived transcripts. It does not collect new speech data.
+- BiSLI is distributed via TalkBank/CHILDES. Follow TalkBank ground rules and cite the corpus.
+- Do not commit raw CHAT files, cleaned transcripts, or free-text model rationales.
 - Outcomes are narrative-level model recommendations relative to historical corpus labels, not clinical diagnoses.
+- The paper’s secondary analysis used archived transcripts only; no new speech was collected.
 
 ---
 
 ## Citation
-
-If you use this code or prompt set, please cite the paper:
 
 > Anonymous Author(s). 2027. *Bilingual, Not Delayed? Auditing Language-Background Effects in LLM Referral Decisions*. In Proceedings of Australasian Computer Science Week (ACSW ’27).
 
@@ -215,4 +247,4 @@ Also cite the BiSLI corpus papers required by TalkBank.
 
 ## License
 
-MIT (code and prompt templates). Corpus text remains under TalkBank terms and is not part of this repository.
+MIT for code and prompt templates. Corpus text remains under TalkBank terms and is not part of this repository.

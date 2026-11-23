@@ -13,6 +13,8 @@ venv/
 .ruff_cache/
 .DS_Store
 Thumbs.db
+.idea/
+.vscode/
 
 # Local data and model outputs (TalkBank / BiSLI text must never be committed)
 data/
@@ -22,8 +24,5 @@ results/
 *.gguf
 *.bin
 *.safetensors
-
-# Editor / OS
-.idea/
-.vscode/
-*.swp
+*.pdf
+_paper_extract.txt

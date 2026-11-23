@@ -1,9 +1,4 @@
-"""Counterfactual C3 label-swap prompts (monolingual Russian narratives).
-
-C3_MONO presents the accurate monolingual background.
-C3_BI_CF presents the bilingual background on the same transcript and age.
-True diagnosis and true group never appear in the prompt.
-"""
+"""Counterfactual C3 label-swap prompts for monolingual Russian narratives."""
 
 from __future__ import annotations
 
@@ -35,13 +30,9 @@ def build_cf_prompt(
     language: str = "Russian",
 ) -> tuple[str, dict]:
     if label == "C3_MONO":
-        group = "monolingual"
-        presented = "monolingual"
-        counterfactual = False
+        group, presented, counterfactual = "monolingual", "monolingual", False
     elif label == "C3_BI_CF":
-        group = "bilingual"
-        presented = "bilingual"
-        counterfactual = True
+        group, presented, counterfactual = "bilingual", "bilingual", True
     else:
         raise ValueError(label)
 
@@ -58,7 +49,7 @@ def build_cf_prompt(
         "presented_background": presented,
         "counterfactual": counterfactual,
         "prompt_family_version": PROMPT_FAMILY_VERSION,
-        "prompt_hash": hashlib.sha256(prompt.encode("utf-8")).hexdigest(),
+        "prompt_hash": hashlib.sha256(prompt.encode()).hexdigest(),
         "template_hash": TEMPLATE_HASHES[template_key],
         "template_key": template_key,
         "matches_accurate_c3_render": group == "monolingual",
@@ -66,26 +57,17 @@ def build_cf_prompt(
     return prompt, meta
 
 
-def extract_transcript_span(prompt: str) -> str:
-    start = prompt.find("<transcript>")
-    end = prompt.find("</transcript>")
-    if start < 0 or end < 0:
-        return ""
-    return prompt[start + len("<transcript>") : end]
-
-
 def prompt_diff_ok(prompt_mono: str, prompt_bi: str, language: str = "Russian") -> dict:
-    """Check that only the background sentence differs between the pair."""
-    tx_m = extract_transcript_span(prompt_mono)
-    tx_b = extract_transcript_span(prompt_bi)
     mono_bg = background_sentence("monolingual", language)
     bi_bg = background_sentence("bilingual", language)
+    start_m = prompt_mono.find("<transcript>")
+    end_m = prompt_mono.find("</transcript>")
+    start_b = prompt_bi.find("<transcript>")
+    end_b = prompt_bi.find("</transcript>")
+    tx_m = prompt_mono[start_m:end_m] if start_m >= 0 and end_m >= 0 else ""
+    tx_b = prompt_bi[start_b:end_b] if start_b >= 0 and end_b >= 0 else ""
     swapped = prompt_mono.replace(mono_bg, bi_bg, 1)
     return {
         "transcript_spans_identical": tx_m == tx_b and bool(tx_m),
-        "mono_contains_mono_bg": mono_bg in prompt_mono,
-        "mono_lacks_bi_bg": bi_bg not in prompt_mono,
-        "bi_contains_bi_bg": bi_bg in prompt_bi,
-        "bi_lacks_mono_bg": mono_bg not in prompt_bi,
         "swap_mono_bg_yields_bi_prompt": swapped == prompt_bi,
     }

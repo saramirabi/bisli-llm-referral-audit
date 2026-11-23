@@ -1,0 +1,24 @@
+# Single-cue ablation probes (label only)
+# Same shared shell as primary C2/C3 and factorial cells.
+# MONO matches factorial M0. BI_LABEL matches factorial B0.
+# Neither sentence mentions Netherlands upbringing or story language.
+
+## MONO
+The child is a monolingual Russian speaker.
+
+## BI_LABEL
+The child is a bilingual Russian–Dutch speaker.
+
+## Full C3 bilingual sentence (comparison probe; not label-only)
+The child is bilingual (Russian–Dutch), growing up in the Netherlands, and told this story in Russian.
+
+## Assembly
+A child aged {AGE} told a story based on a picture sequence.
+{CELL_SENTENCE}
+Lines marked "Adult" are the examiner. The other lines are the child.
+Here is the transcript:
+<transcript>
+{TRANSCRIPT}
+</transcript>
+Based only on this language sample, does the child's language look typical for their age, or should the child be referred for a language assessment? Answer in JSON only:
+{"decision": "typical" | "refer", "confidence": 0-100 (how confident you are in your decision), "reasons": ["...", "..."]}
