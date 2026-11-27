@@ -226,25 +226,3 @@ parsed = parse_response(model_text)
 
 Keep `prompts/*.txt` and `src/bisli_audit/prompts.py` aligned.
 
----
-
-## Data governance
-
-- BiSLI is distributed via TalkBank/CHILDES. Follow TalkBank ground rules and cite the corpus.
-- Do not commit raw CHAT files, cleaned transcripts, or free-text model rationales.
-- Outcomes are narrative-level model recommendations relative to historical corpus labels, not clinical diagnoses.
-- The paper’s secondary analysis used archived transcripts only; no new speech was collected.
-
----
-
-## Citation
-
-> Anonymous Author(s). 2027. *Bilingual, Not Delayed? Auditing Language-Background Effects in LLM Referral Decisions*. In Proceedings of Australasian Computer Science Week (ACSW ’27).
-
-Also cite the BiSLI corpus papers required by TalkBank.
-
----
-
-## License
-
-MIT for code and prompt templates. Corpus text remains under TalkBank terms and is not part of this repository.
